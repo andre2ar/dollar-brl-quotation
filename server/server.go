@@ -56,13 +56,13 @@ func usdBrlQuotationHandler(w http.ResponseWriter, r *http.Request) {
 	quotation, err := getUsdBrlQuotation()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("{\"message\": \"Internal server error\"}"))
+		w.Write([]byte(`{"message": "Internal server error"}`))
 		return
 	}
 	_, err = saveToDatabase(quotation)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("{\"message\": \"Internal server error\"}"))
+		w.Write([]byte(`{"message": "Internal server error"}`))
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -70,7 +70,7 @@ func usdBrlQuotationHandler(w http.ResponseWriter, r *http.Request) {
 	bytesJson, err := json.Marshal(quotation.Usdbrl)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("{\"message\": \"Internal server error\"}"))
+		w.Write([]byte(`{"message": "Internal server error"}`))
 		return
 	}
 
@@ -107,7 +107,7 @@ func getUsdBrlQuotation() (*USDBRLQuotation, error) {
 			return nil, err
 		}
 
-		return &usdBrlQuotation, err
+		return &usdBrlQuotation, nil
 	}
 }
 
