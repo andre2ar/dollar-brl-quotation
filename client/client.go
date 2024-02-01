@@ -33,7 +33,8 @@ func getQuotation() (*ServerQuotation, error) {
 
 	select {
 	case <-ctx.Done():
-		return nil, errors.New("context timeout")
+		log.Println("getQuotation context timeout")
+		return nil, errors.New("getQuotation context timeout")
 	default:
 		req, err := http.NewRequestWithContext(ctx, "GET", "http://localhost:8080/quotation/usd-brl", nil)
 		if err != nil {

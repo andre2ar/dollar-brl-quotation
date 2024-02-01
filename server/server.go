@@ -27,15 +27,12 @@ type Quotation struct {
 var db *gorm.DB
 
 func main() {
-	fmt.Println("Server is starting...")
+	fmt.Println("Server is starting on localhost:8080")
 
 	db = getDatabase()
 
 	http.HandleFunc("/quotation/usd-brl", usdBrlQuotationHandler)
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-		log.Println(err)
-	}
+	log.Fatalln(http.ListenAndServe(":8080", nil))
 }
 
 func getDatabase() *gorm.DB {
@@ -56,16 +53,15 @@ func usdBrlQuotationHandler(w http.ResponseWriter, r *http.Request) {
 	quotation, err := getUsdBrlQuotation()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "Internal server error"}`))
+		w.Write([]byte(`{"message": "Internal server error, request timeout"}`))
 		return
 	}
 	_, err = saveToDatabase(quotation)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "Internal server error"}`))
+		w.Write([]byte(`{"message": "Internal server error, database timeout"}`))
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 
 	bytesJson, err := json.Marshal(quotation.Usdbrl)
 	if err != nil {
@@ -74,6 +70,7 @@ func usdBrlQuotationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	w.Write(bytesJson)
 }
 
@@ -83,7 +80,8 @@ func getUsdBrlQuotation() (*USDBRLQuotation, error) {
 
 	select {
 	case <-ctx.Done():
-		return nil, errors.New("context timeout")
+		log.Println("getUsdBrlQuotation context timeout")
+		return nil, errors.New("getUsdBrlQuotation context timeout")
 	default:
 		req, err := http.NewRequestWithContext(ctx, "GET", "https://economia.awesomeapi.com.br/json/last/USD-BRL", nil)
 		if err != nil {
@@ -112,8 +110,7 @@ func getUsdBrlQuotation() (*USDBRLQuotation, error) {
 }
 
 func saveToDatabase(usdBrlQuotation *USDBRLQuotation) (*Quotation, error) {
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
 
 	select {
